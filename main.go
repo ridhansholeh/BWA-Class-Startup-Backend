@@ -42,7 +42,13 @@ func main() {
 	userHandler := handler.NewUserHandler(userService, authService)
 
 	router := gin.Default()
-	router.Use(cors.Default())
+
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowCredentials = true
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+
+	router.Use(cors.New(config))
 	router.Static("/images", "./images")
 	api := router.Group("/api/v1")
 

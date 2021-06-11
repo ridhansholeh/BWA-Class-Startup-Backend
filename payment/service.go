@@ -7,11 +7,11 @@ import (
 	midtrans "github.com/veritrans/go-midtrans"
 )
 
-type Service interface {
-	GetPaymentURL(transaction Transaction, user user.User) (string, error)
+type service struct {
 }
 
-type service struct {
+type Service interface {
+	GetPaymentURL(transaction Transaction, user user.User) (string, error)
 }
 
 func NewService() *service {

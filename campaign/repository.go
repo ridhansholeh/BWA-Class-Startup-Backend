@@ -45,7 +45,8 @@ func (r *repository) FindByUserID(userID int) ([]Campaign, error) {
 func (r *repository) FindByID(ID int) (Campaign, error) {
 	var campaign Campaign
 
-	err := r.db.Where("id = ?", ID).Preload("CampaignImages").Preload("User").Find(&campaign).Error
+	err := r.db.Preload("User").Preload("CampaignImages").Where("id = ?", ID).Find(&campaign).Error
+
 	if err != nil {
 		return campaign, err
 	}
@@ -83,6 +84,7 @@ func (r *repository) CreateImage(campaignImage CampaignImage) (CampaignImage, er
 
 func (r *repository) MarkAllImagesAsNonPrimary(campaignID int) (bool, error) {
 	err := r.db.Model(&CampaignImage{}).Where("campaign_id = ?", campaignID).Update("is_primary", false).Error
+
 	if err != nil {
 		return false, err
 	}

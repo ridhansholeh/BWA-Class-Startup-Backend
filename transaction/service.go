@@ -7,17 +7,18 @@ import (
 	"strconv"
 )
 
+type service struct {
+	repository         Repository
+	campaignRepository campaign.Repository
+	paymentService     payment.Service
+}
+
 type Service interface {
 	GetTransactionsByCampaignID(input GetCampaignTransactionsInput) ([]Transaction, error)
 	GetTransactionsByUserID(userID int) ([]Transaction, error)
 	CreateTransaction(input CreateTransactionInput) (Transaction, error)
 	ProcessPayment(input TransactionNotificationInput) error
-}
-
-type service struct {
-	repository         Repository
-	campaignRepository campaign.Repository
-	paymentService     payment.Service
+	GetAllTransactions() ([]Transaction, error)
 }
 
 func NewService(repository Repository, campaignRepository campaign.Repository, paymentService payment.Service) *service {
@@ -31,7 +32,7 @@ func (s *service) GetTransactionsByCampaignID(input GetCampaignTransactionsInput
 	}
 
 	if campaign.UserID != input.User.ID {
-		return []Transaction{}, errors.New("not an owner of the Campaign")
+		return []Transaction{}, errors.New("Not an owner of the campaign")
 	}
 
 	transactions, err := s.repository.GetByCampaignID(input.ID)
@@ -52,24 +53,23 @@ func (s *service) GetTransactionsByUserID(userID int) ([]Transaction, error) {
 }
 
 func (s *service) CreateTransaction(input CreateTransactionInput) (Transaction, error) {
-	transaction := Transaction{
-		CampaignID: input.CampaignID,
-		Amount:     input.Amount,
-		UserID:     input.User.ID,
-		Status:     "pending",
-	}
+	transaction := Transaction{}
+	transaction.CampaignID = input.CampaignID
+	transaction.Amount = input.Amount
+	transaction.UserID = input.User.ID
+	transaction.Status = "pending"
 
 	newTransaction, err := s.repository.Save(transaction)
 	if err != nil {
 		return newTransaction, err
 	}
 
-	paymentTransaction := payment.Transaction{
+	paymentTransacation := payment.Transaction{
 		ID:     newTransaction.ID,
 		Amount: newTransaction.Amount,
 	}
 
-	paymentURL, err := s.paymentService.GetPaymentURL(paymentTransaction, input.User)
+	paymentURL, err := s.paymentService.GetPaymentURL(paymentTransacation, input.User)
 	if err != nil {
 		return newTransaction, err
 	}
@@ -111,7 +111,7 @@ func (s *service) ProcessPayment(input TransactionNotificationInput) error {
 	}
 
 	if updatedTransaction.Status == "paid" {
-		campaign.BackerCount += 1
+		campaign.BackerCount = campaign.BackerCount + 1
 		campaign.CurrentAmount = campaign.CurrentAmount + updatedTransaction.Amount
 
 		_, err := s.campaignRepository.Update(campaign)
@@ -121,4 +121,13 @@ func (s *service) ProcessPayment(input TransactionNotificationInput) error {
 	}
 
 	return nil
+}
+
+func (s *service) GetAllTransactions() ([]Transaction, error) {
+	transactions, err := s.repository.FindAll()
+	if err != nil {
+		return transactions, err
+	}
+
+	return transactions, nil
 }

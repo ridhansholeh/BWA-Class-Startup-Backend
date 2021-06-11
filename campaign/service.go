@@ -52,14 +52,13 @@ func (s *service) GetCampaignByID(input GetCampaignDetailInput) (Campaign, error
 }
 
 func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
-	campaign := Campaign{
-		Name:             input.Name,
-		ShortDescription: input.ShortDescription,
-		Description:      input.Description,
-		GoalAmount:       input.GoalAmount,
-		Perks:            input.Perks,
-		UserID:           input.User.ID,
-	}
+	campaign := Campaign{}
+	campaign.Name = input.Name
+	campaign.ShortDescription = input.ShortDescription
+	campaign.Description = input.Description
+	campaign.Perks = input.Perks
+	campaign.GoalAmount = input.GoalAmount
+	campaign.UserID = input.User.ID
 
 	slugCandidate := fmt.Sprintf("%s %d", input.Name, input.User.ID)
 	campaign.Slug = slug.Make(slugCandidate)
@@ -79,7 +78,7 @@ func (s *service) UpdateCampaign(inputID GetCampaignDetailInput, inputData Creat
 	}
 
 	if campaign.UserID != inputData.User.ID {
-		return campaign, errors.New("not an owner of the Campaign")
+		return campaign, errors.New("Not an owner of the campaign")
 	}
 
 	campaign.Name = inputData.Name
@@ -103,11 +102,10 @@ func (s *service) SaveCampaignImage(input CreateCampaignImageInput, fileLocation
 	}
 
 	if campaign.UserID != input.User.ID {
-		return CampaignImage{}, errors.New("not an owner of the Campaign")
+		return CampaignImage{}, errors.New("Not an owner of the campaign")
 	}
 
 	isPrimary := 0
-
 	if input.IsPrimary {
 		isPrimary = 1
 
